@@ -1,0 +1,20 @@
+//LOGIN
+{
+  "username": "testuser",
+  "proof": "dummy-proof"
+}
+//USER STORY 3 :STORING 
+{
+  "encryptedVault": "ENCRYPTED_DATA_ABC123=="
+}
+//OFFLINE - vhanges according to th new devices and revokes
+
+{
+  "encryptedVault": "DATA_V1",
+  "version": 1
+}
+
+// for revoking 
+{
+  "deviceId": "device-123"
+}
