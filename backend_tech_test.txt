@@ -1,0 +1,72 @@
+POST MAN - API testing tool
+TECH STACK :
+Node.js – runtime to execute JavaScript on the server
+Express.js – to build REST APIs
+In-memory storage (Map objects) – temporary storage for sprint work
+Postman – API testing, validation, and manual test cases
+
+BACKEND COMPONENTS :
+1.app.js
+* Starts the server
+* Connects all routes and middleware
+* Listens on port `3000`
+
+2. Routes (src/routes/)
+Routes decide which URL does what.
+a) auth.routes.js- User authentication
+* Accepts login request
+* Receives username and proof
+* Calls authentication service
+* Returns a JWT token if login is valid
+
+b)vault.routes.js- Encrypted vault handling
+* Upload encrypted vault data
+* Fetch encrypted vault data
+* Update encrypted vault with version control
+* Rejects invalid tokens, revoked devices, and version conflicts
+
+c) device.routes.js- Device security
+* Registers a device ID
+* Revokes a device ID
+* Blocks revoked devices from accessing vault
+
+d)health.route.js- System monitoring
+* Returns server health status
+
+3. Middleware (src/middleware/)
+Middleware runs before routes.
+a)auth.middleware.js-Token validation
+* Reads `Authorization` header
+* Checks if JWT token is valid
+* Blocks request if token is missing or invalid
+
+b)device.middleware.js- Device validation
+* Reads `x-device-id` header
+* Checks if device is registered
+* Blocks request if device is revoked
+
+c)error.middleware.js-Error handling
+* Catches server errors
+* Sends clean error response
+* Prevents backend crash
+
+4. Services (src/services/)
+Services handle how things work, not routing.
+auth.service.js- Login verification
+* Validates login proof
+* Generates JWT token
+* Does not store passwords
+
+5. Storage (src/storage/)
+Used instead of database for Sprint-1.
+a) memory.store.js-Vault storage
+* Stores encrypted vault data
+* Stores vault version
+* Handles version conflicts
+
+b) device.store.js-Device tracking
+* Stores registered devices
+* Marks devices as revoked
+* Checks revocation status
+
+CLOUD DATABASE : Supabase 
