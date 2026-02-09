@@ -1,67 +1,163 @@
 # Zero-Knowledge Vault Backend – Developer Documentation
 
-This document explains **how the backend is structured**, **why each component exists**, and **how all parts work together**.
-It is intended for developers, reviewers, and DevOps planning.
+---
+
+## Table of Contents
+
+1. Introduction
+2. About the Project
+3. Installation
+4. Usage
+5. Running Tests
+6. Compatibility
+7. Project Structure Overview
+8. Security Design Notes
+9. Limitations
+10. Project Support
+11. License
 
 ---
 
-## 1. Project Goal
+## 1. Introduction
 
-The goal of this backend is to demonstrate a **zero-knowledge password vault system**.
+This document explains the **technical and architectural details** of the Zero-Knowledge Vault Backend.
+It is written for **developers, reviewers, and DevOps planning**, not for end users.
 
-Key principles:
-
-* The backend **never sees or stores passwords**
-* Only **encrypted vault data** is handled
-* Security is enforced using **tokens, device validation, and version control**
-* All features are testable using **Postman only (no frontend required)**
+The backend is designed to demonstrate how a **zero-knowledge password vault** can be implemented and tested **without any frontend**, using **Postman**.
 
 ---
 
-## 2. Technology Stack
+## 2. About the Project
 
-### Core Stack
+The Zero-Knowledge Vault Backend ensures that:
 
-* **Node.js** – Runtime
-* **Express.js** – API framework
-* **JavaScript (ES6)** – Language
-* **Postman** – API testing
+* The server **never sees user passwords**
+* Only **encrypted vault data** is stored
+* Access is controlled using:
 
-### Why this stack?
+  * Token-based authentication (dummy JWT)
+  * Device-based authorization
+  * Version-controlled updates
+* All functionality is verified via API calls
 
-* Lightweight and fast to develop
-* Easy to test APIs independently
-* Suitable for microservices and DevOps pipelines
-* Clear separation of concerns
+This project currently represents **Sprint 1**, focusing only on backend logic and security validation.
 
 ---
 
-## 3. High-Level Architecture
+## 3. Installation
+
+### Prerequisites
+
+You need the following installed on your system:
+
+#### Node.js
+
+Download (LTS recommended):
+[https://nodejs.org/en/download/](https://nodejs.org/en/download/)
+
+Verify installation:
+
+```bash
+node -v
+npm -v
+```
+
+#### Postman
+
+Used for API testing:
+[https://www.postman.com/downloads/](https://www.postman.com/downloads/)
+
+---
+
+### Install Dependencies
+
+Open a terminal in the project root and run:
+
+```bash
+npm install
+```
+
+---
+
+## 4. Usage
+
+### Start the Backend Server
+
+```bash
+node src/app.js
+```
+
+You should see:
 
 ```
-Client (Postman / Frontend)
-        |
-        v
-   Express Routes
-        |
-        v
-   Middleware Layer
-        |
-        v
-   Services (Business Logic)
-        |
-        v
-   In-Memory Storage
+Server running on port 3000
 ```
 
 ---
 
-## 4. Folder Structure Overview
+### API Usage Flow (High Level)
+
+1. Login using `/auth/login`
+2. Receive a token
+3. Upload encrypted vault data
+4. Read vault data
+5. Update vault with version check
+6. Test device revocation and failure cases
+
+All requests are made through **Postman**.
+
+---
+
+## 5. Running Tests
+
+### Current Testing Approach
+
+At this stage, testing is done using **Postman manual testing**, which includes:
+
+* Valid request flows
+* Invalid token scenarios
+* Invalid device scenarios
+* Version conflict scenarios
+* Revoked device access checks
+
+This approach was chosen to:
+
+* Validate business logic early
+* Demonstrate backend behavior clearly
+* Prepare for frontend integration later
+
+### Planned Testing (Future)
+
+* Postman Collection tests
+* Newman CLI for automated CI testing
+* Jest for unit testing middleware and services
+
+---
+
+## 6. Compatibility
+
+* **Node.js**: LTS versions (v18+ recommended)
+* **Operating Systems**:
+
+  * Windows
+  * macOS
+  * Linux
+* **API Clients**:
+
+  * Postman
+  * Curl
+  * Any HTTP client
+
+No browser dependency exists at this stage.
+
+---
+
+## 7. Project Structure Overview
 
 ```
 src/
 │
-├── app.js                 → Application entry point
+├── app.js                 → App entry point
 │
 ├── routes/                → API endpoints
 │   ├── auth.routes.js
@@ -69,7 +165,7 @@ src/
 │   ├── device.routes.js
 │   └── health.route.js
 │
-├── middleware/            → Security & validation layers
+├── middleware/            → Security & validation
 │   ├── auth.middleware.js
 │   ├── device.middleware.js
 │   ├── rateLimit.middleware.js
@@ -78,238 +174,58 @@ src/
 ├── services/              → Business logic
 │   └── auth.service.js
 │
-└── storage/               → In-memory data stores
+└── storage/               → In-memory storage
     ├── memory.store.js
     └── device.store.js
 ```
 
 ---
 
-## 5. Component Responsibilities
+## 8. Security Design Notes
 
-### 5.1 `app.js` – Application Entry Point
-
-* Initializes Express server
-* Enables CORS and JSON parsing
-* Registers all route modules
-* Registers global error handler
-* Starts server on port `3000`
-
-Purpose:
-
-> Central configuration and application bootstrap.
+* Passwords are **never transmitted or stored**
+* Vault data is **already encrypted before reaching backend**
+* Backend stores only encrypted blobs
+* Device-based authorization adds an extra security layer
+* Version control prevents data overwrite conflicts
+* Failure cases are intentional and demonstrable
 
 ---
 
-## 6. Routes Layer (API Endpoints)
+## 9. Limitations
 
-### 6.1 Authentication Routes – `auth.routes.js`
+Current limitations (Sprint 1):
 
-**Endpoint**
-
-* `POST /auth/login`
-
-Responsibilities:
-
-* Accepts `username` and `proof`
-* Verifies user without password
-* Returns a dummy JWT token
-
-Why:
-
-> Simulates zero-knowledge authentication without exposing secrets.
-
----
-
-### 6.2 Vault Routes – `vault.routes.js`
-
-Endpoints:
-
-* `POST /vault/upload`
-* `GET /vault/data`
-* `POST /vault/update`
-
-Responsibilities:
-
-* Stores only **encrypted vault blobs**
-* Enforces version control
-* Prevents accidental overwrites
-* Blocks unauthorized or revoked devices
-
-Why:
-
-> Ensures data integrity and secure access to encrypted content.
-
----
-
-### 6.3 Device Routes – `device.routes.js`
-
-Endpoints:
-
-* `POST /device/register`
-* `POST /device/revoke`
-
-Responsibilities:
-
-* Registers trusted devices
-* Revokes compromised devices
-* Prevents revoked devices from accessing vault
-
-Why:
-
-> Adds device-level security beyond token authentication.
-
----
-
-### 6.4 Health Route – `health.route.js`
-
-Endpoint:
-
-* `GET /health`
-
-Responsibilities:
-
-* Confirms backend availability
-* Used for monitoring and DevOps readiness
-
----
-
-## 7. Middleware Layer (Security & Validation)
-
-### 7.1 Authentication Middleware – `auth.middleware.js`
-
-* Validates Authorization header
-* Blocks requests without valid token
-
-Purpose:
-
-> Ensures only authenticated users access protected routes.
-
----
-
-### 7.2 Device Middleware – `device.middleware.js`
-
-* Validates `x-device-id`
-* Checks device revocation status
-
-Purpose:
-
-> Enforces trusted-device access.
-
----
-
-### 7.3 Rate Limiting Middleware – `rateLimit.middleware.js`
-
-* Limits number of requests per device
-* Prevents abuse and brute-force attempts
-
-Purpose:
-
-> Protects backend stability.
-
----
-
-### 7.4 Error Middleware – `error.middleware.js`
-
-* Catches unhandled errors
-* Returns consistent error responses
-
-Purpose:
-
-> Improves reliability and debugging.
-
----
-
-## 8. Services Layer
-
-### 8.1 Authentication Service – `auth.service.js`
-
-Responsibilities:
-
-* Handles authentication logic
-* Generates dummy JWT token
-
-Purpose:
-
-> Keeps business logic separate from routes.
-
----
-
-## 9. Storage Layer (Current Implementation)
-
-### 9.1 `memory.store.js`
-
-* Stores encrypted vault data
-* Stores vault version
-
-Note:
-
-> Data resets on server restart (no database yet).
-
----
-
-### 9.2 `device.store.js`
-
-* Tracks registered devices
-* Tracks revoked devices
-
-Purpose:
-
-> Enables device-level access control.
-
----
-
-## 10. Security Design Decisions
-
-* No plaintext passwords stored
-* No encryption keys on server
-* Token + device validation required
-* Version control prevents race conditions
-* Intentional failure cases implemented
-
----
-
-## 11. Testing Strategy
-
-### Current Testing
-
-* Manual API testing via Postman
-* Positive and negative test cases verified
-* Failure scenarios intentionally demonstrated
-
-### Planned Testing
-
-* Postman Collections + Tests
-* Newman CLI for CI pipelines
-* Jest for unit testing (future)
-
----
-
-## 12. Known Limitations (Sprint 1)
-
-* In-memory storage only
-* Dummy token authentication
+* No database (data resets on restart)
+* Dummy JWT tokens
 * Simulated encryption
-* No frontend integration yet
+* No frontend integration
+* No automated test pipeline yet
+
+These are **known and intentional**, based on sprint scope.
 
 ---
 
-## 13. Future Enhancements
+## 10. Project Support
 
-* Real JWT authentication
-* Database integration (MongoDB / PostgreSQL)
-* Proper encryption libraries
-* Frontend integration
-* CI/CD pipeline with automated tests
+For questions, issues, or improvements:
+
+* Raise GitHub issues
+* Discuss changes during sprint review
+* Extend documentation as features evolve
+
+This project is actively developed as part of an academic sprint.
 
 ---
 
-## 14. Summary
+## 11. License
 
-This backend demonstrates:
+This project is licensed under the **MIT License**.
 
-* Zero-knowledge architecture principles
-* Secure API design
-* Modular and scalable backend structure
-* Clear separation of concerns
-* DevOps-ready architecture
+You are free to:
+
+* Use
+* Modify
+* Distribute
+
+With proper attribution.
