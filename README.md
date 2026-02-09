@@ -1,260 +1,374 @@
-Zero-Knowledge Vault Backend (Postman Guide)
+# Zero-Knowledge Vault Backend (Postman Guide)
 
-This backend is built to test a zero-knowledge password vault system.
-All features can be tested without any frontend, using Postman.
+This project is a **Sprint 1 backend prototype** for a zero-knowledge password vault system.
 
-You do not need deep backend knowledge to try this.
-Follow the steps below in order.
+The backend **never sees real passwords**.  
+Only encrypted vault data is stored.
 
-Prerequisites
+All APIs can be tested **without any frontend** using :contentReference[oaicite:0]{index=0}.
 
-Before starting, install the following:
+You do **not** need deep backend knowledge to try this — just follow the steps below in order.
 
-#Node.js
+---
+
+## Features
+
+- Zero-knowledge data handling  
+- Token-based authentication (dummy JWT for now)  
+- Device-based access control  
+- Version-controlled vault updates  
+- Secure failure responses  
+- In-memory storage (no database yet)
+
+---
+
+## Prerequisites
+
+Before starting, install:
+
+### 1. :contentReference[oaicite:1]{index=1}
 
 Node.js is required to run the backend server.
 
-->Download Node.js (LTS version recommended):
+Download (LTS recommended):
+
 https://nodejs.org/en/download/
 
 After installation, verify:
 
+```bash
 node -v
 npm -v
+````
 
-#Postman
+---
+
+### 2. Postman
 
 Postman is used to test APIs without a frontend.
 
-Download Postman:
-https://www.postman.com/downloads/
+Download:
 
-Running the Backend
+[https://www.postman.com/downloads/](https://www.postman.com/downloads/)
 
-Open terminal in the project folder
+---
 
-Install dependencies:
+## Running the Backend
 
+Open a terminal inside your project folder.
+
+### Install dependencies
+
+```bash
 npm install
+```
 
+### Start the server
 
-Start the server:
-
+```bash
 node src/app.js
-
+```
 
 You should see:
 
+```
 Server running on port 3000
+```
 
-How this backend works (in simple words)
+---
 
-The backend never sees real passwords
+## How This Backend Works (Simple Explanation)
 
-It only stores encrypted vault data
+* The backend **never receives real passwords**
+* It only stores **encrypted vault blobs**
+* Access is controlled using:
 
-Access is controlled using:
+  * A token (simulated JWT)
+  * A device ID (to simulate trusted devices)
+* All data is stored **in memory**
 
-A token (simulated JWT)
+---
 
-A device ID (to simulate trusted devices)
+# Step-by-Step Postman Testing Guide
 
-All data is stored in memory (no database yet)
+---
 
-Step-by-Step Postman Testing Guide
-1️.Login (Get access token)
+## 1. Login (Get Access Token)
 
-Request
+### Request
 
-Method: POST
+**Method**
 
-URL:
+```
+POST
+```
 
+**URL**
+
+```
 http://localhost:3000/auth/login
+```
 
+### Headers
 
-Headers
-
+```
 Content-Type: application/json
 x-device-id: device-123
+```
 
+### Body (raw → JSON)
 
-Body (raw → JSON)
-
+```json
 {
   "username": "testuser",
   "proof": "dummy-proof"
 }
+```
 
+### Expected Response
 
-Expected response
-
+```json
 {
   "message": "Login successful",
   "token": "dummy-jwt-token"
 }
+```
 
+Save this token — you will use it for all next requests.
 
-->Save the token (dummy-jwt-token) — you’ll use it for all next requests.
+---
 
-2️. Upload encrypted vault data
+## 2. Upload Encrypted Vault Data
 
-Request
+### Request
 
-Method: POST
+**Method**
 
-URL:
+```
+POST
+```
 
+**URL**
+
+```
 http://localhost:3000/vault/upload
+```
 
+### Headers
 
-Headers
-
+```
 Authorization: Bearer dummy-jwt-token
 x-device-id: device-123
 Content-Type: application/json
+```
 
+### Body
 
-Body
-
+```json
 {
   "encryptedVault": "ENCRYPTED_DATA_ABC123=="
 }
+```
 
+### Expected Response
 
-Expected response
-
+```json
 {
   "message": "Vault data saved",
   "version": 1
 }
+```
 
-3️. Read vault data
+---
 
-Request
-Method: GET
-URL:
+## 3. Read Vault Data
 
+### Request
+
+**Method**
+
+```
+GET
+```
+
+**URL**
+
+```
 http://localhost:3000/vault/data
+```
 
-Headers:
+### Headers
+
+```
 Authorization: Bearer dummy-jwt-token
 x-device-id: device-123
+```
 
+### Expected Response
 
-Expected response
-
+```json
 {
   "encryptedVault": "ENCRYPTED_DATA_ABC123==",
   "version": 1
 }
+```
 
-4️.Update vault (with version check)
+---
 
-This prevents overwriting newer data accidentally.
+## 4. Update Vault (With Version Check)
 
-Request
+This prevents accidentally overwriting newer data.
 
-Method: POST
+### Request
 
-URL:
+**Method**
 
+```
+POST
+```
+
+**URL**
+
+```
 http://localhost:3000/vault/update
+```
 
-Headers:
+### Headers
+
+```
 Authorization: Bearer dummy-jwt-token
 x-device-id: device-123
 Content-Type: application/json
+```
 
-Body:
+### Body
 
+```json
 {
   "encryptedVault": "DATA_V2",
   "version": 1
 }
+```
 
-Expected success:
+### Expected Success
 
+```json
 {
   "message": "Vault updated",
   "version": 2
 }
+```
 
-FAIL: Version conflict example (expected failure)
-If you send an old version number:
+---
 
-Body:
+### Version Conflict Example (Expected Failure)
 
+If you send an old version:
+
+```json
 {
   "encryptedVault": "DATA_V3",
   "version": 1
 }
+```
 
 Response:
 
+```json
 {
   "error": "Version conflict",
   "currentVersion": 2
 }
+```
 
-5️.Device-based access control
+---
 
-The backend checks which device is accessing the vault.
-Try with wrong device
-Header:
+## 5. Device-Based Access Control
+
+Try using a wrong device:
+
+```
 x-device-id: device-999
+```
 
-Expected
+Expected:
+
+```json
 {
   "error": "Device not authorized"
 }
+```
 
-6️. Revoke a device (security test)
+---
+
+## 6. Revoke a Device (Security Test)
 
 Once a device is revoked, it cannot access vault data anymore.
-After revocation:
-Any request with:
-x-device-id: device-123
 
-Will return:
+After revocation, any request with:
+
+```
+x-device-id: device-123
+```
+
+Returns:
+
+```json
 {
   "error": "Device access revoked"
 }
+```
 
 This proves device-level security works.
 
-Common failure cases (for demonstration)
-Scenario	Result
-Missing token	401 Unauthorized
-Wrong token	403 Forbidden
-Wrong device ID	403 Forbidden
-Revoked device	403 Forbidden
-Vault empty	404 Vault is empty
-Version mismatch	409 Conflict
+---
 
-These failures are intentional and show backend security behavior.
+## Common Failure Cases
 
-#Current limitations
+| Scenario         | Result             |
+| ---------------- | ------------------ |
+| Missing token    | 401 Unauthorized   |
+| Wrong token      | 403 Forbidden      |
+| Wrong device ID  | 403 Forbidden      |
+| Revoked device   | 403 Forbidden      |
+| Vault empty      | 404 Vault is empty |
+| Version mismatch | 409 Conflict       |
 
-No database (data resets when server restarts)
-Encryption is simulated
-Token is a dummy token
-This is Sprint 1 backend only
+These failures are intentional and demonstrate backend security behavior.
 
-#Next planned improvements (Sprint 2)
+---
 
-Real JWT authentication
-Database integration
-Real encryption logic
-Frontend integration
-Rate limiting & logging
+## Current Limitations
 
-#Summary
+* No database (data resets on restart)
+* Encryption is simulated
+* Token is a dummy token
+* Sprint 1 backend only
+
+---
+
+## Next Planned Improvements (Sprint 2)
+
+* Real JWT authentication
+* Database integration
+* Real encryption logic
+* Frontend integration
+* Rate limiting and logging
+
+---
+
+## Summary
 
 This backend demonstrates:
-Zero-knowledge data handling
-Token-based authentication
-Device-based security
-Version-controlled updates
-Secure failure handling
+
+* Zero-knowledge data handling
+* Token-based authentication
+* Device-based security
+* Version-controlled updates
+* Secure failure handling
+
 All features are verified using Postman before frontend integration.
+
+
+Just tell me.
+```
