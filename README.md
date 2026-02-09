@@ -368,7 +368,5 @@ This backend demonstrates:
 * Secure failure handling
 
 All features are verified using Postman before frontend integration.
+Refer DevDocs
 
-
-Just tell me.
-```
